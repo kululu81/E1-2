@@ -1,4 +1,5 @@
 import json
+import random
 from pathlib import Path
 
 from quiz import Quiz
@@ -110,11 +111,13 @@ class QuizGame:
             print("등록된 퀴즈가 없습니다.")
             return
 
+        # 원본 순서는 유지하고, 이번 게임에서 출제할 순서만 새로 섞는다.
+        shuffled_quizzes = random.sample(self.quizzes, len(self.quizzes))
         score = 0
 
-        print("\n===== 퀴즈 시작 =====")
+        print("\n===== 퀴즈 시작 (문제 순서는 랜덤입니다) =====")
 
-        for index, quiz in enumerate(self.quizzes, start=1):
+        for index, quiz in enumerate(shuffled_quizzes, start=1):
             print(f"\n[{index}번 문제]")
             quiz.show_question()
 
@@ -133,7 +136,7 @@ class QuizGame:
                 print("오답입니다.")
 
         print("\n===== 퀴즈 결과 =====")
-        print(f"총 문제 수: {len(self.quizzes)}")
+        print(f"총 문제 수: {len(shuffled_quizzes)}")
         print(f"맞힌 문제 수: {score}")
         print(f"점수: {score}점")
 
