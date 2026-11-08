@@ -73,3 +73,5 @@ python main.py
     "best_score": 80
 }
 ```
+
+> clone/pull 실습: 별도 폴더에 저장소를 clone한 뒤 이 줄을 추가하고 push했습니다.
