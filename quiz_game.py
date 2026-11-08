@@ -204,3 +204,47 @@ class QuizGame:
 
         print("새 퀴즈가 추가되었습니다!")
         self.save_data()
+
+    def delete_quiz(self):
+        if not self.quizzes:
+            print("삭제할 퀴즈가 없습니다.")
+            return
+
+        self.show_quizzes()
+        total = len(self.quizzes)
+
+        while True:
+            raw = input(f"삭제할 퀴즈 번호를 입력하세요 (1~{total}): ").strip()
+
+            if not raw:
+                print("⚠️ 삭제할 번호를 입력해주세요.")
+                continue
+
+            if not raw.isdecimal():
+                print("⚠️ 숫자를 입력해주세요.")
+                continue
+
+            number = int(raw)
+
+            if 1 <= number <= total:
+                break
+
+            print(f"⚠️ 1부터 {total} 사이의 숫자를 입력해주세요.")
+
+        target = self.quizzes[number - 1]
+
+        while True:
+            confirm = input(f"'{target.question}' 퀴즈를 삭제할까요? (y/n): ").strip().lower()
+
+            if confirm in ["y", "n"]:
+                break
+
+            print("⚠️ y 또는 n을 입력해주세요.")
+
+        if confirm == "n":
+            print("삭제를 취소했습니다.")
+            return
+
+        self.quizzes.pop(number - 1)
+        print("퀴즈가 삭제되었습니다.")
+        self.save_data()
