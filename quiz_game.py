@@ -1,5 +1,7 @@
+
 import json
 import random
+import shutil
 from pathlib import Path
 
 from quiz import Quiz
@@ -8,8 +10,11 @@ from quiz import Quiz
 class QuizGame:
     def __init__(self):
         self.state_file = Path(__file__).parent / "state.json"
+        self.backup_file = Path(__file__).parent / "state.json.bak"
+        self.temp_file = Path(__file__).parent / "state.json.tmp"
+
         self.quizzes = self._default_quizzes()
-        self.best_score = None  # 100점 만점 기준 점수, None이면 아직 퀴즈를 풀지 않은 상태
+        self.best_score = None
 
         self.load_data()
 
@@ -29,8 +34,9 @@ class QuizGame:
                  ["list", "int", "str", "bool"], 1),
         ]
 
-    def save_data(self):
-        data = {
+    def _make_data(self):
+        """현재 게임 데이터를 JSON 저장용 딕셔너리로 변환한다."""
+        return {
             "quizzes": [
                 {
                     "question": quiz.question,
@@ -42,53 +48,152 @@ class QuizGame:
             "best_score": self.best_score,
         }
 
+    @staticmethod
+    def _validate_data(data):
+        """불러온 JSON 데이터의 구조와 내용을 검증한다."""
+        if not isinstance(data, dict):
+            raise ValueError("저장 데이터는 객체여야 합니다.")
+
+        if "quizzes" not in data or not isinstance(data["quizzes"], list):
+            raise ValueError("퀴즈 목록 형식이 올바르지 않습니다.")
+
+        if "best_score" not in data:
+            raise ValueError("최고 점수 항목이 없습니다.")
+
+        score = data["best_score"]
+
+        if score is not None:
+            if isinstance(score, bool) or not isinstance(score, int):
+                raise ValueError("최고 점수 형식이 올바르지 않습니다.")
+
+            if not 0 <= score <= 100:
+                raise ValueError("최고 점수는 0~100 사이여야 합니다.")
+
+        quizzes = []
+
+        for item in data["quizzes"]:
+            if not isinstance(item, dict):
+                raise ValueError("퀴즈 데이터 형식이 올바르지 않습니다.")
+
+            quiz = Quiz(
+                item["question"],
+                item["choices"],
+                item["answer"],
+            )
+
+            if len(set(choice.strip() for choice in quiz.choices)) != 4:
+                raise ValueError("중복된 선택지가 있습니다.")
+
+            quizzes.append(quiz)
+
+        return quizzes, score
+
+    def _read_data(self, file_path):
+        """지정한 JSON 파일을 읽고 검증한다."""
+        with open(file_path, "r", encoding="utf-8") as file:
+            data = json.load(file)
+
+        return self._validate_data(data)
+
+    def _backup_current_data(self):
+        """기존 저장 파일을 백업한다."""
+        if not self.state_file.exists():
+            return True
+
         try:
-            with open(self.state_file, "w", encoding="utf-8") as file:
+            shutil.copy2(self.state_file, self.backup_file)
+            return True
+
+        except OSError as error:
+            print(f"백업 파일 생성에 실패했습니다: {error}")
+            return False
+
+    def save_data(self):
+        """임시 파일에 저장한 후 교체하여 데이터 손상을 줄인다."""
+        try:
+            data = self._make_data()
+
+            with open(self.temp_file, "w", encoding="utf-8") as file:
                 json.dump(data, file, ensure_ascii=False, indent=4)
+                file.flush()
 
-            print("게임 데이터가 저장되었습니다.")
+            # 기존 파일이 있으면 교체 전에 백업한다.
+            if self.state_file.exists():
+                if not self._backup_current_data():
+                    print("기존 데이터를 백업하지 못해 저장을 취소합니다.")
+                    return False
 
-        except OSError:
-            print("데이터 저장에 실패했습니다.")
+            # 임시 파일을 실제 저장 파일로 교체한다.
+            self.temp_file.replace(self.state_file)
+
+            print("게임 데이터가 안전하게 저장되었습니다.")
+            return True
+
+        except (OSError, TypeError, ValueError) as error:
+            print(f"데이터 저장에 실패했습니다: {error}")
+
+            try:
+                if self.temp_file.exists():
+                    self.temp_file.unlink()
+            except OSError:
+                pass
+
+            return False
 
     def load_data(self):
+        """저장 파일을 불러오고, 손상된 경우 백업으로 복구한다."""
         if not self.state_file.exists():
             print("저장된 데이터가 없습니다. 기본 퀴즈를 사용합니다.")
             return
 
         try:
-            with open(self.state_file, "r", encoding="utf-8") as file:
-                data = json.load(file)
+            quizzes, score = self._read_data(self.state_file)
+            self.quizzes = quizzes
+            self.best_score = score
 
-            saved_best_score = data.get("best_score")
+            print(
+                f"저장된 게임 데이터를 불러왔습니다. "
+                f"(퀴즈 {len(self.quizzes)}개)"
+            )
+            return
 
-            if saved_best_score is not None and not isinstance(saved_best_score, int):
-                raise ValueError("best_score 형식이 올바르지 않습니다.")
+        except (OSError, json.JSONDecodeError, KeyError,
+                TypeError, ValueError, AttributeError) as error:
+            print(f"저장 파일을 불러오지 못했습니다: {error}")
 
-            loaded_quizzes = []
+        # 원본 파일을 별도로 보존한다.
+        try:
+            if self.state_file.exists():
+                damaged_file = self.state_file.with_name("state.json.corrupt")
+                shutil.copy2(self.state_file, damaged_file)
+                print(f"손상된 파일을 보존했습니다: {damaged_file.name}")
+        except OSError as error:
+            print(f"손상 파일 보존에 실패했습니다: {error}")
 
-            for item in data["quizzes"]:
-                loaded_quizzes.append(
-                    Quiz(
-                        item["question"],
-                        item["choices"],
-                        item["answer"],
-                    )
-                )
+        # 백업 파일에서 복구를 시도한다.
+        if self.backup_file.exists():
+            try:
+                quizzes, score = self._read_data(self.backup_file)
 
-            self.quizzes = loaded_quizzes
-            self.best_score = saved_best_score
+                self.quizzes = quizzes
+                self.best_score = score
 
-            print(f"저장된 게임 데이터를 불러왔습니다. (퀴즈 {len(self.quizzes)}개)")
+                print("백업 파일을 이용해 데이터를 복구했습니다.")
 
-        except OSError:
-            print("파일을 읽는 중 오류가 발생했습니다. 기본 퀴즈를 사용합니다.")
+                if self.save_data():
+                    print("복구된 데이터가 저장되었습니다.")
 
-        except (json.JSONDecodeError, KeyError, TypeError, ValueError, AttributeError):
-            print("저장 파일이 손상되었습니다. 기본 퀴즈로 초기화합니다.")
-            self.quizzes = self._default_quizzes()
-            self.best_score = None
-            self.save_data()
+                return
+
+            except (OSError, json.JSONDecodeError, KeyError,
+                    TypeError, ValueError, AttributeError) as error:
+                print(f"백업 파일도 손상되었습니다: {error}")
+
+        # 복구할 수 없는 경우 기본 데이터로 초기화한다.
+        print("기본 퀴즈 5개로 초기화합니다.")
+        self.quizzes = self._default_quizzes()
+        self.best_score = None
+        self.save_data()
 
     def show_quizzes(self):
         if not self.quizzes:
@@ -107,7 +212,7 @@ class QuizGame:
             print(f"🏆 최고 점수: {self.best_score}점 (100점 만점)")
 
     def _ask_question_count(self):
-        """풀 문제 수를 입력받아 반환한다. 올바른 값이 들어올 때까지 다시 묻는다."""
+        """풀 문제 수를 입력받는다."""
         total = len(self.quizzes)
 
         while True:
@@ -134,8 +239,6 @@ class QuizGame:
             return
 
         count = self._ask_question_count()
-
-        # 원본 순서는 유지하고, 이번 게임에서 출제할 문제만 랜덤으로 뽑는다.
         selected_quizzes = random.sample(self.quizzes, count)
         correct = 0
 
@@ -159,7 +262,6 @@ class QuizGame:
             else:
                 print("오답입니다.")
 
-        # 문제 수가 달라도 비교할 수 있도록 100점 만점으로 환산한다.
         score = correct * 100 // count
 
         print("\n===== 퀴즈 결과 =====")
@@ -185,11 +287,16 @@ class QuizGame:
             while True:
                 choice = input(f"{index}번 선택지를 입력하세요: ").strip()
 
-                if choice:
-                    choices.append(choice)
-                    break
+                if not choice:
+                    print("선택지 내용을 입력해주세요.")
+                    continue
 
-                print("선택지 내용을 입력해주세요.")
+                if choice in choices:
+                    print("이미 등록한 선택지입니다. 다른 내용을 입력해주세요.")
+                    continue
+
+                choices.append(choice)
+                break
 
         while True:
             answer = input("정답 번호를 입력하세요 (1~4): ").strip()
@@ -234,7 +341,9 @@ class QuizGame:
         target = self.quizzes[number - 1]
 
         while True:
-            confirm = input(f"'{target.question}' 퀴즈를 삭제할까요? (y/n): ").strip().lower()
+            confirm = input(
+                f"'{target.question}' 퀴즈를 삭제할까요? (y/n): "
+            ).strip().lower()
 
             if confirm in ["y", "n"]:
                 break
