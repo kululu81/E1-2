@@ -1,17 +1,19 @@
 # Python 기초 퀴즈 게임
 
 ## 1. 프로젝트 개요
+
 Python 기초 지식을 재미있게 학습할 수 있는 콘솔 기반 퀴즈 게임입니다.
-Python 표준 라이브러리만 사용하며, 클래스(`Quiz`, `QuizGame`)로 역할을 나누고
-JSON 파일(`state.json`)에 데이터를 저장해 프로그램을 종료해도 퀴즈와 최고 점수가 유지됩니다.
+
+Python 표준 라이브러리만 사용하며, 클래스(`Quiz`, `QuizGame`)로 역할을 나누고 JSON 파일(`state.json`)에 데이터를 저장해 프로그램을 종료해도 퀴즈와 최고 점수가 유지됩니다.
 
 ## 2. 퀴즈 주제와 선정 이유
+
 **주제: Python 기초 문법**
 
-Python을 처음 배우는 학습자가 주요 문법과 개념을 반복해서 확인하고 익힐 수 있도록
-퀴즈 형식으로 구성했습니다. 직접 배우고 있는 내용이라 문제를 만들면서 복습할 수 있다는 점도 선정 이유입니다.
+Python을 처음 배우는 학습자가 주요 문법과 개념을 반복해서 확인하고 익힐 수 있도록 퀴즈 형식으로 구성했습니다. 직접 배우고 있는 내용이라 문제를 만들면서 복습할 수 있다는 점도 선정 이유입니다.
 
 ## 3. 실행 방법
+
 Python 3.10 이상이 필요하며, 외부 라이브러리는 필요하지 않습니다.
 
 ```powershell
@@ -21,6 +23,7 @@ python main.py
 ```
 
 ## 4. 기능 목록
+
 | 메뉴 | 기능 | 설명 |
 | --- | --- | --- |
 | 1 | 퀴즈 풀기 | 풀 문제 수를 선택하면 퀴즈를 랜덤 순서로 출제하고, 정답/오답을 알려준 뒤 100점 만점으로 환산한 결과를 보여줍니다. 최고 점수를 넘으면 갱신합니다. |
@@ -36,19 +39,34 @@ python main.py
 - 보너스 기능: 랜덤 출제, 문제 수 선택, 퀴즈 삭제
 
 ## 5. 파일 구조
+
 ```text
 .
-├── main.py        # 프로그램 실행 및 메뉴 루프
-├── quiz.py        # Quiz 클래스 (개별 퀴즈)
-├── quiz_game.py   # QuizGame 클래스 (게임 진행, 저장/불러오기)
-├── state.json     # 퀴즈와 최고 점수 데이터 (첫 저장 시 자동 생성, Git 관리 제외)
+├── main.py                 # 프로그램 실행 및 메뉴 루프
+├── quiz.py                 # Quiz 클래스 (개별 퀴즈)
+├── quiz_game.py            # QuizGame 클래스 (게임 진행, 저장/불러오기)
+├── state.json              # 퀴즈와 최고 점수 데이터 (첫 저장 시 자동 생성, Git 관리 제외)
 ├── README.md
-└── .gitignore
+├── .gitignore
+└── docs/
+    └── screenshots/
+        ├── env.png
+        ├── menu.png
+        ├── play1.png
+        ├── play2.png
+        ├── play_result.png
+        ├── add_quiz.png
+        ├── list.png
+        ├── score.png
+        └── git_log.png
 ```
 
+※ `state.json`은 첫 저장 시 자동 생성되며, 게임 데이터가 변경되므로 `.gitignore`에 등록해 Git 관리에서 제외했습니다.
+
 ## 6. 데이터 파일 설명 (`state.json`)
+
 - **경로**: 프로젝트 루트의 `state.json`
-- **역할**: 사용자가 추가한 퀴즈와 최고 점수를 저장해 프로그램을 다시 실행해도 유지되도록 합니다.
+- **역할**: 사용자가 추가한 퀴즈와 최고 점수를 저장해 프로그램을 다시 실행해도 데이터가 유지되도록 합니다.
 - **인코딩**: UTF-8
 - **생성 시점**: 처음 저장될 때(퀴즈 추가·삭제, 최고 점수 갱신, 종료) 자동으로 생성됩니다.
 - 게임을 할 때마다 내용이 바뀌므로 `.gitignore`에 등록해 Git 관리에서 제외했습니다.
@@ -60,6 +78,8 @@ python main.py
 | `quizzes[].choices` | 문자열 배열 | 선택지 4개 |
 | `quizzes[].answer` | 정수 | 정답 번호 (1~4) |
 | `best_score` | 정수 또는 `null` | 최고 점수(100점 만점으로 환산). `null`이면 아직 퀴즈를 풀지 않은 상태 |
+
+### JSON 데이터 예시
 
 ```json
 {
@@ -74,4 +94,32 @@ python main.py
 }
 ```
 
-> clone/pull 실습: 별도 폴더에 저장소를 clone한 뒤 이 줄을 추가하고 push했습니다.
+> clone/pull 실습: 별도 폴더에 저장소를 clone한 뒤 README에 이 내용을 추가하고 push했습니다.
+
+## 7. 실행 화면
+
+### 개발 환경
+![개발 환경](docs/screenshots/env.png)
+
+### 메인 메뉴
+![메인 메뉴](docs/screenshots/menu.png)
+
+### 퀴즈 풀기
+![퀴즈 진행](docs/screenshots/play1.png)
+
+![퀴즈 진행 화면 2](docs/screenshots/play2.png)
+
+### 퀴즈 결과
+![퀴즈 결과](docs/screenshots/play_result.png)
+
+### 퀴즈 추가하기
+![퀴즈 추가](docs/screenshots/add_quiz.png)
+
+### 퀴즈 목록 보기
+![퀴즈 목록](docs/screenshots/list.png)
+
+### 최고 점수 확인
+![최고 점수](docs/screenshots/score.png)
+
+### Git 커밋 기록
+![Git 커밋 기록](docs/screenshots/git_log.png)
