@@ -10,7 +10,8 @@ def print_menu():
     print("2. 퀴즈 추가하기")
     print("3. 퀴즈 목록 보기")
     print("4. 최고 점수 확인")
-    print("5. 종료하기")
+    print("5. 퀴즈 삭제하기")
+    print("6. 종료하기")
 
 
 def main():
@@ -31,12 +32,14 @@ def main():
             elif choice == "4":
                 game.show_best_score()
             elif choice == "5":
+                game.delete_quiz()
+            elif choice == "6":
                 print("게임을 종료합니다.")
                 break
             elif choice == "":
                 print("⚠️ 메뉴 번호를 입력해주세요.")
             else:
-                print("⚠️ 잘못된 입력입니다. 1-5 사이의 숫자를 입력하세요.")
+                print("⚠️ 잘못된 입력입니다. 1-6 사이의 숫자를 입력하세요.")
 
     except (KeyboardInterrupt, EOFError):
         print("\n프로그램을 안전하게 종료합니다.")
