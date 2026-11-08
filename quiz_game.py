@@ -9,7 +9,7 @@ class QuizGame:
     def __init__(self):
         self.state_file = Path(__file__).parent / "state.json"
         self.quizzes = self._default_quizzes()
-        self.best_score = None  # None이면 아직 퀴즈를 풀지 않은 상태
+        self.best_score = None  # 100점 만점 기준 점수, None이면 아직 퀴즈를 풀지 않은 상태
 
         self.load_data()
 
@@ -104,20 +104,44 @@ class QuizGame:
         if self.best_score is None:
             print("아직 퀴즈를 풀지 않았습니다.")
         else:
-            print(f"🏆 최고 점수: {self.best_score}점")
+            print(f"🏆 최고 점수: {self.best_score}점 (100점 만점)")
+
+    def _ask_question_count(self):
+        """풀 문제 수를 입력받아 반환한다. 올바른 값이 들어올 때까지 다시 묻는다."""
+        total = len(self.quizzes)
+
+        while True:
+            raw = input(f"풀 문제 수를 입력하세요 (1~{total}): ").strip()
+
+            if not raw:
+                print("⚠️ 문제 수를 입력해주세요.")
+                continue
+
+            if not raw.isdecimal():
+                print("⚠️ 숫자를 입력해주세요.")
+                continue
+
+            count = int(raw)
+
+            if 1 <= count <= total:
+                return count
+
+            print(f"⚠️ 1부터 {total} 사이의 숫자를 입력해주세요.")
 
     def play(self):
         if not self.quizzes:
             print("등록된 퀴즈가 없습니다.")
             return
 
-        # 원본 순서는 유지하고, 이번 게임에서 출제할 순서만 새로 섞는다.
-        shuffled_quizzes = random.sample(self.quizzes, len(self.quizzes))
-        score = 0
+        count = self._ask_question_count()
 
-        print("\n===== 퀴즈 시작 (문제 순서는 랜덤입니다) =====")
+        # 원본 순서는 유지하고, 이번 게임에서 출제할 문제만 랜덤으로 뽑는다.
+        selected_quizzes = random.sample(self.quizzes, count)
+        correct = 0
 
-        for index, quiz in enumerate(shuffled_quizzes, start=1):
+        print(f"\n===== 퀴즈 시작 (총 {count}문제, 순서는 랜덤입니다) =====")
+
+        for index, quiz in enumerate(selected_quizzes, start=1):
             print(f"\n[{index}번 문제]")
             quiz.show_question()
 
@@ -131,18 +155,19 @@ class QuizGame:
 
             if quiz.check_answer(int(answer)):
                 print("정답입니다!")
-                score += 1
+                correct += 1
             else:
                 print("오답입니다.")
 
+        # 문제 수가 달라도 비교할 수 있도록 100점 만점으로 환산한다.
+        score = correct * 100 // count
+
         print("\n===== 퀴즈 결과 =====")
-        print(f"총 문제 수: {len(shuffled_quizzes)}")
-        print(f"맞힌 문제 수: {score}")
-        print(f"점수: {score}점")
+        print(f"🏆 결과: {count}문제 중 {correct}문제 정답! ({score}점)")
 
         if self.best_score is None or score > self.best_score:
             self.best_score = score
-            print("최고 점수가 갱신되었습니다!")
+            print("🎉 새로운 최고 점수입니다!")
             self.save_data()
 
     def add_quiz(self):
